@@ -1585,17 +1585,17 @@
             });
         }
 
-        // Función para exportar a un Excel
+        // Function to exort to Excel
         function exportToExcel() {
-        // BOM para UTF-8 (acentos y ñ funcionen bien)
+        // BOM for UTF-8 
         let csv = '\uFEFF';
         
-        // Encabezados (punto y coma como separador)
-        csv += 'Día;Ejercicio;Serie;Peso;Reps;RIR;Video;Fecha\n';
+        // Header Excel
+        csv += 'Día;Exercise;Serie;Weight;Reps;RIR;Video;Date\n';
         
         const date = new Date().toLocaleDateString();
         
-        // Recorrer todos los días guardados
+        // Run all days saved
         Object.keys(savedData).forEach(day => {
             const dayName = workoutData[day]?.name || day;
             
@@ -1609,9 +1609,9 @@
                 Object.keys(savedData[day][exIndex]).forEach(setIndex => {
                     const data = savedData[day][exIndex][setIndex];
                     
-                    // Solo exportar si hay datos o está completado
+                    // Just export the data filled
                     if (data.weight || data.reps || data.completed) {
-                        // Limpiar comillas para no romper el CSV
+                        // Clean to not break the CSV
                         const cleanName = exName.replace(/"/g, '""');
                         const cleanVideo = video.replace(/"/g, '""');
                         const rir = data.rir || exercise.rir || '';
@@ -1622,7 +1622,7 @@
             });
         });
         
-        // Crear y descargar el archivo
+        // Create and download the file
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
