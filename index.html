@@ -886,6 +886,7 @@
             <div class="logo">Ferry's Plan</div>
             <div class="header-buttons">
                 <button class="phase-badge" onclick="toggleEditMode()" id="editToggle">Edit Mode</button>
+                <button class="phase-badge" onclick="exportToExcel()">📊 Export</button>
                 <div class="phase-badge">Cutting Phase</div>
             </div>
         </div>
@@ -1584,11 +1585,64 @@
             });
         }
 
-        // Edit Mode Functions
-        function openAddExerciseModal(day) {
-            addingToDay = day;
-            document.getElementById('addExerciseModal').classList.add('active');
-        }
+        // Función para exportar a un Excel
+        function exportToExcel() {
+        // BOM para UTF-8 (acentos y ñ funcionen bien)
+        let csv = '\uFEFF';
+        
+        // Encabezados (punto y coma como separador)
+        csv += 'Día;Ejercicio;Serie;Peso;Reps;RIR;Video;Fecha\n';
+        
+        const date = new Date().toLocaleDateString();
+        
+        // Recorrer todos los días guardados
+        Object.keys(savedData).forEach(day => {
+            const dayName = workoutData[day]?.name || day;
+            
+            Object.keys(savedData[day]).forEach(exIndex => {
+                const exercise = workoutData[day]?.exercises[exIndex];
+                if (!exercise) return;
+                
+                const exName = exercise.name;
+                const video = exercise.video || '';
+                
+                Object.keys(savedData[day][exIndex]).forEach(setIndex => {
+                    const data = savedData[day][exIndex][setIndex];
+                    
+                    // Solo exportar si hay datos o está completado
+                    if (data.weight || data.reps || data.completed) {
+                        // Limpiar comillas para no romper el CSV
+                        const cleanName = exName.replace(/"/g, '""');
+                        const cleanVideo = video.replace(/"/g, '""');
+                        const rir = data.rir || exercise.rir || '';
+                        
+                        csv += `${dayName};"${cleanName}";${parseInt(setIndex)+1};"${data.weight || ''}";"${data.reps || ''}";"${rir}";"${cleanVideo}";${date}\n`;
+                    }
+                });
+            });
+        });
+        
+        // Crear y descargar el archivo
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute("href", url);
+        link.setAttribute("download", `mi_progreso_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert('¡Excel exportado! 📊\n\nPara abrirlo bien en Excel:\n1. Abre Excel\n2. Datos → Obtener datos → Desde archivo de texto\n3. Selecciona el CSV\n4. Asegúrate que el separador sea: Punto y coma (;)');
+    }
+
+            // Edit Mode Functions
+            function openAddExerciseModal(day) {
+                addingToDay = day;
+                document.getElementById('addExerciseModal').classList.add('active');
+            }
 
         function closeModal() {
             document.getElementById('addExerciseModal').classList.remove('active');
