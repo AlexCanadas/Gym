@@ -684,6 +684,26 @@
             transform: translateY(0);
         }
 
+        /* Reset day uncheck */
+        .reset-day-btn {
+            background: transparent;
+            border: 2px solid var(--danger);
+            color: var(--danger);
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .reset-day-btn:hover {
+            background: rgba(255, 71, 87, 0.1);
+            transform: translateY(-2px);
+        }
+
         /* Modal */
         .modal {
             display: none;
@@ -997,7 +1017,7 @@
         </section>
     </main>
 
-    <div class="progress-container">
+        <div class="progress-container">
         <div class="progress-content">
             <div class="progress-info">
                 <div class="progress-text" id="progress-text">Monday Progress: 0%</div>
@@ -1005,7 +1025,10 @@
                     <div class="progress-fill" id="progress-bar" style="width: 0%"></div>
                 </div>
             </div>
-            <button class="complete-day-btn" onclick="completeCurrentDay()">Complete Day</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="reset-day-btn" onclick="resetCurrentDay()">↺ Reset</button>
+                <button class="complete-day-btn" onclick="completeCurrentDay()">Complete Day</button>
+            </div>
         </div>
     </div>
 
@@ -1457,9 +1480,11 @@
             
             for(let i = 0; i < exercise.sets; i++) {
                 const setNum = i + 1;
-                const reps = i === 0 ? exercise.reps.split(' / ')[0] : (exercise.reps.split(' / ')[1] || exercise.reps.split(' / ')[0]);
-                const weight = i === 0 ? exercise.w1 : (exercise.w2 || exercise.w1);
-                
+                const repParts = exercise.reps.split(' / ');
+                const midpoint = Math.ceil(exercise.sets / 2); // Split sets evenly: first half gets first value, second half gets second
+                const reps = i < midpoint ? repParts[0] : (repParts[1] || repParts[0]);
+                const weight = i < midpoint ? exercise.w1 : (exercise.w2 || exercise.w1);
+                                
                 setsHtml += `
                     <div class="set-row" id="${exerciseId}-set-${i}">
                         <div class="set-number">${setNum}</div>
@@ -1775,6 +1800,38 @@
             }
             
             updateProgress();
+        }
+
+        function resetCurrentDay() {
+            if (!confirm('Clear all completed sets for this day?')) return;
+            
+            const dayData = workoutData[currentDay];
+            if (!dayData) return;
+            
+            let clearedCount = 0;
+            
+            dayData.exercises.forEach((exercise, exIndex) => {
+                for(let i = 0; i < exercise.sets; i++) {
+                    const exerciseId = `${currentDay}-${exIndex}`;
+                    const checkbox = document.getElementById(`${exerciseId}-check-${i}`);
+                    const setRow = document.getElementById(`${exerciseId}-set-${i}`);
+                    
+                    if (checkbox && checkbox.checked) {
+                        checkbox.checked = false;
+                        setRow.classList.remove('completed');
+                        
+                        if (savedData[currentDay] && savedData[currentDay][exIndex] && savedData[currentDay][exIndex][i]) {
+                            savedData[currentDay][exIndex][i].completed = false;
+                        }
+                        clearedCount++;
+                    }
+                }
+            });
+            
+            localStorage.setItem('ferryGymData', JSON.stringify(savedData));
+            updateProgress();
+            
+            alert(`Cleared ${clearedCount} sets! Ready for next workout 💪`);
         }
 
         // Initialize
